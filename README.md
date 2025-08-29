@@ -82,4 +82,6 @@
   pip install requests beautifulsoup4
 
   pip install matplotlib plotly
+
+  pip install pytest pytest-cov
   ```
