@@ -66,10 +66,12 @@
 
 ## 建構步驟
 
-1. 架設虛擬環境
+1. 架設虛擬環境並啟用(windows)
 
   ```sh
   python -m venv venv
+
+  venv\Scripts\activate
   ```
 
 2. 安裝相關套件
@@ -85,3 +87,80 @@
 
   pip install pytest pytest-cov
   ```
+
+3. 單元測試執行
+
+  ```sh
+  pytest -v 
+  ```
+
+## MVP 流程 (單檔股票)
+
+1. 輸入股票代碼
+
+   - 使用者在 Streamlit 輸入 2330.TW（先只支援台股一檔股票）
+
+2. 取得股價資料
+
+   - 用 yfinance.download("2330.TW", period="6mo") 抓取近半年日線數據
+
+   - 計算技術指標（RSI、MACD、均線）
+
+3. 新聞來源（簡化版）
+
+   - 先不用正式爬蟲
+
+   - 用 requests 爬取 Yahoo Finance / Google News 的標題，過濾含「台積電」關鍵字的前 3 則
+
+   - 文字長度控制在 500 ~ 1000 字內，避免 prompt 太長
+
+4. 組裝市場報告
+
+   - 包含：股價摘要 + 技術指標 + 新聞摘要
+
+   - 用結構化格式包裝成字串
+
+5. 丟給 OpenAI 分析
+
+   Prompt 範例：
+  
+   ```
+   股票名稱: 台積電 (2330.TW)
+   技術指標:
+   - RSI(14): 65 (偏高)
+   - MACD: DIF > DEA，呈多頭
+   - 20日均線 > 60日均線
+
+   新聞摘要:
+   1. 台積電法說會預期下半年營收成長...
+   2. 全球 AI 晶片需求帶動台積電產能...
+
+   請扮演專業股市分析師，提供：
+   1. 短期 (1~2週) 買賣建議
+   2. 理由（結合技術與新聞）
+   3. 信心度 (0-100)
+   ```
+6. 輸出到前端 (Streamlit)
+   - 股價走勢 K 線圖 (matplotlib / plotly)
+   - 技術指標線 (RSI/MACD)
+   - LLM 回答的分析文字
+
+## 系統架構
+
+```
+ai-stock-assistant/
+│── backend/
+│   ├── data_fetcher.py      # yfinance + 技術指標
+│   ├── news_fetcher.py      # 簡單新聞爬蟲 (Yahoo Finance)
+│   ├── report_builder.py    # 整合數據 & 新聞 → 市場報告
+│   ├── openai_client.py     # 呼叫 OpenAI API
+│   └── app.py               # Flask API 入口
+│
+│── frontend/
+│   └── app.py               # Streamlit 介面
+
+│── tests/
+│   └── test_data_fetcher.py # 單元測試
+|
+│── requirements.txt
+```
